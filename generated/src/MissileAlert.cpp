@@ -2,8 +2,9 @@
 // Created by Vlad on 06-Nov-24.
 //
 #include <../include/MissileAlert.h>
+#include <../include/Player.h>
 
-MissileAlert::MissileAlert(const std::string& textureFile) : Object(textureFile) {
+MissileAlert::MissileAlert(const sf::Texture& texture_ref, const Player* player) : Object(texture_ref), playerRef(player) {
     active = false;
     alertDuration = 4.0f;
     this->sprite.setTextureRect({0, 0, 100, 100});
@@ -18,7 +19,7 @@ MissileAlert::MissileAlert(const std::string& textureFile) : Object(textureFile)
     };
 
     // Initialize animator
-    animator = new Animate(sprite, frames, 2.5f); // Animation speed: 0.2 seconds per frame
+    animator = new Animate(sprite, frames, 0.2f); // Animation speed: 0.2 seconds per frame
 }
 
 MissileAlert::~MissileAlert() = default;
@@ -35,22 +36,25 @@ void MissileAlert::alert() {
 }
 
 bool MissileAlert::isAlerting() const {
-    return active && (timer.getElapsedTime().asSeconds()<alertDuration && timer.getElapsedTime().asSeconds()>0.0f);
+    return active;
 }
 
 
-void MissileAlert::update(){
-}
-
-void MissileAlert::updateAlert(float playerY, float deltaTime) {
-    if(isAlerting()) {
-        this->sprite.setPosition(1200-this->sprite.getGlobalBounds().width,playerY); // Follow player
-        animator->update(deltaTime);
+void MissileAlert::update(float deltaTime){
+    if(!active) return;
+    if(timer.getElapsedTime().asSeconds() >= alertDuration) {
+        active = false;
     }
     else {
-        active=false;
+        if(playerRef) {
+            float currentPlayerY=this->playerRef->getSprite().getPosition().y;
+            this->sprite.setPosition(1200-this->sprite.getGlobalBounds().width,currentPlayerY); // Follow player
+            animator->update(deltaTime);
+        }
     }
 }
+
+
 
 
 void MissileAlert::render(sf::RenderTarget &target) const {

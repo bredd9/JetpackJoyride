@@ -19,7 +19,7 @@ public:
     Scoreboard(const std::string& fontPath, const std::string& highScoreFilePath);
     ~Scoreboard();
 
-    void update(float deltaTime, float scoreIncrement);
+    void update(int coins);
     void draw(sf::RenderWindow& window) const;
     void reset();
     void saveRecord();

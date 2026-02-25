@@ -5,8 +5,8 @@
 
 
 Player::Player() {
-    gravity=5.0f;
-    jetpackPower=-5.0f;
+    gravity=250.0f;
+    jetpackPower=-300.0f;
     isUsingJetpack=false;
     velocity = sf::Vector2f(0.0f, 0.0f);
 
@@ -26,7 +26,7 @@ Player::Player() {
     };
 
     // Create an animator for this player
-    animator = new Animate(sprite, frames, 1.5f ); // 0.1f is the animation speed
+    animator = new Animate(sprite, frames, 0.1f ); // 0.1f is the animation speed
 }
 
 
@@ -51,7 +51,7 @@ void Player::update(float deltaTime) {
     if(isUsingJetpack)
         velocity.y=jetpackPower;
     else velocity.y=gravity;
-    sprite.move(velocity);
+    sprite.move(0.f, velocity.y * deltaTime);
 
     //Not falling off the screen
 

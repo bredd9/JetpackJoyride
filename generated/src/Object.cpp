@@ -3,13 +3,9 @@
 //
 #include <Object.h>
 
-Object::Object(const std::string& textureFile)
+Object::Object(const sf::Texture& texture_ref)
     {
-    if (!texture.loadFromFile(textureFile)) {
-        throw std::runtime_error("Failed to load texture");
-
-    }
-    sprite.setTexture(texture);
+    this->sprite.setTexture(texture_ref);
     }
 
 Object::~Object() {

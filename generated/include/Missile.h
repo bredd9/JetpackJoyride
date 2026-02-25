@@ -19,10 +19,9 @@ private:
 
 
 public:
-    Missile(const std::string& textureFile);
+    Missile(const sf::Texture& texture_ref);
     ~Missile() override;
-    void update()override;
-    void updateMissile(float deltaTime);
+    void update(float deltaTime)override;
     void render(sf::RenderTarget& target) const override;
     void launch(float yPosition);
     bool isLaunched() const;

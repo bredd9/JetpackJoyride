@@ -12,9 +12,9 @@ Scoreboard::Scoreboard(const std::string& fontPath, const std::string& highScore
     // Initialize current score text
     currentScoreText.setFont(font);
     currentScoreText.setCharacterSize(24);
-    currentScoreText.setFillColor(sf::Color::White);
+    currentScoreText.setFillColor(sf::Color::Yellow);
     currentScoreText.setPosition(10, 10);
-    currentScoreText.setString("Score: 0");
+    currentScoreText.setString("Coins: 0");
 
     // Initialize high score text
     highScoreText.setFont(font);
@@ -36,10 +36,10 @@ Scoreboard::~Scoreboard() {
     saveRecord();
 }
 
-void Scoreboard::update(float deltaTime, float scoreIncrement) {
+void Scoreboard::update(int coins) {
     // Increment score
-    currentScore += static_cast<int>(scoreIncrement * deltaTime);
-    currentScoreText.setString("Score: " + std::to_string(currentScore));
+    currentScore = coins;
+    currentScoreText.setString("Coins: " + std::to_string(currentScore));
 
     // Update high score if necessary
     if (currentScore > highScore) {
@@ -55,7 +55,7 @@ void Scoreboard::draw(sf::RenderWindow& window) const {
 
 void Scoreboard::reset() {
     currentScore = 0;
-    currentScoreText.setString("Score: 0");
+    currentScoreText.setString("Coins: 0");
 }
 
 void Scoreboard::saveRecord() {

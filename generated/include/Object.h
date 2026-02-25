@@ -12,12 +12,11 @@ class Object{
 
 protected:
     sf::Sprite sprite;
-    sf::Texture texture;
 
 public:
-    Object(const std::string& textureFile);
+    Object(const sf::Texture& texture_ref);
     virtual ~Object();
-    virtual void update()=0;
+    virtual void update(float deltaTime)=0;
     virtual void render(sf::RenderTarget& target)const=0;
     const sf::Sprite& getSprite() const { return this->sprite; }
 };

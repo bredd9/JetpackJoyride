@@ -34,7 +34,7 @@ public:
     void update(float deltaTime);
     void render(sf::RenderTarget& target) const;
     void useJetpack(bool activate);
-    const sf::Sprite& getSprite() { return sprite; }
+    const sf::Sprite& getSprite() const { return sprite; }
 
 
 

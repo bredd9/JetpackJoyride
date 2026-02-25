@@ -3,35 +3,42 @@
 //
 #include <Coin.h>
 
-float Coin::randomFloat(float min, float max) {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    std::uniform_real_distribution<float> dist(min, max);
-    return dist(gen);
-}
+Coin::Coin(const sf::Texture& texture_ref, float x, float y) : Object(texture_ref) {
+    this->speed=-300.f;
 
-Coin::Coin(const std::string& textureFile) : Object(textureFile), speed(150.f) {
-    this->sprite.setTextureRect({0,0,40,40});
+    const int frameWidth = 40;
+    const int frameHeight = 40;
+    const int numFrames = 8;
+
+    this->sprite.setTextureRect({0,0,frameWidth,frameHeight});
+
     this->sprite.setScale(1.f, 1.f);
-    this->sprite.setRotation(randomFloat(0.f, 360.f));
+    this->sprite.setOrigin(frameWidth/2.f, frameHeight/2.f);
+    this->sprite.setPosition(x, y);
+
+    std::vector<sf::IntRect> frames;
+    for (int i = 0; i < numFrames; ++i) {
+        frames.push_back({i * frameWidth, 0, frameWidth, frameHeight});
+    }
+
+this->animator = new Animate(this->sprite, frames, 0.08f); // 0.08 seconds per frame
+
 }
 
-Coin::~Coin() {}
-
-void Coin::updateMovement(float offsetX, float offsetY) {
-    this->sprite.move(offsetX, offsetY); // Move the coin
+Coin::~Coin() {
+    delete this ->animator;
 }
 
-void Coin::update() {
+
+void Coin::update(float deltaTime) {
+    this->sprite.move(this->speed*deltaTime, 0.f); // Move the coin
+    this->animator->update(deltaTime); // Update animation
 }
 
 void Coin::render(sf::RenderTarget& target) const {
     target.draw(this->sprite);
 }
 
-void Coin::spawnAt(float x, float y) {
-    this->sprite.setPosition(x, y);
-}
 
 float Coin::getY() const {
     return this->sprite.getPosition().y;

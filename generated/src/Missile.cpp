@@ -4,9 +4,9 @@
 #include <../include/Missile.h>
 
 
-Missile::Missile(const std::string& textureFile) : Object(textureFile){
+Missile::Missile(const sf::Texture& texture_ref) : Object(texture_ref){
     launched=false;
-    speed=-8.0f;
+    speed=-650.f;
     this->sprite.setTextureRect({0,0,100,64});
 
     //Resize
@@ -25,15 +25,10 @@ void Missile::launch(const float yPosition){
 }
 
 
-void Missile::update() {
-
-}
-
-
-void Missile::updateMissile(float deltaTime) {
+void Missile::update(float deltaTime) {
     if (this->isLaunched()) {
         // Move the missile
-        sprite.move(speed, 0);
+        sprite.move(speed * deltaTime, 0);
 
         // Check if off-screen
         if (sprite.getPosition().x < -sprite.getGlobalBounds().width) {
@@ -43,18 +38,16 @@ void Missile::updateMissile(float deltaTime) {
         // Animate the missile
         const int frameWidth = 100;       // Width of a single frame
         const int frameCount = 7;        // Total number of frames
-        const float animationSpeed = 0.22f; // Time per frame in seconds
+        const float animationSpeed = 0.05f; // Time per frame in seconds
 
         timer += deltaTime; // Increment the timer by delta time
 
-        // Update the texture rect if enough time has passed for a new frame
-        if (timer >= animationSpeed) {
-            int currentFrame = (static_cast<int>(timer / animationSpeed) % frameCount);
-            sprite.setTextureRect({currentFrame * frameWidth, 0, frameWidth, 64});
-            timer -= animationSpeed; // Keep the remainder for smooth transitions
-        }
+        int currentFrame = (static_cast<int>(timer / animationSpeed) % frameCount);
+        sprite.setTextureRect({currentFrame * frameWidth, 0, frameWidth, 64});
     }
 }
+
+
 
 
 void Missile::render(sf::RenderTarget &target) const {

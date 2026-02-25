@@ -6,27 +6,21 @@
 #define COINS_H
 
 #include <Object.h>
-#include <random>
+#include <Animate.h>
+
 class Coin : public Object {
 private:
   float speed;           // Speed at which the coin moves
   sf::Vector2f position; // Position of the coin
-
-  // Helper function for random float generation
-  static float randomFloat(float min, float max);
+  Animate *animator; // Animator for coin animation
 
 public:
-  Coin(const std::string& textureFile);
+  Coin(const sf::Texture& texture_ref, float x, float y);
   ~Coin() override;
 
-  void updateMovement(float offsetX, float offsetY);
-
   // Override methods
-  void update() override;
+  void update(float deltaTime) override;
   void render(sf::RenderTarget& target) const override;
-
-  // Spawn coin at a specific position
-  void spawnAt(float x, float y);
 
   float getY() const;
   float getX() const;

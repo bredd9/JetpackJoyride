@@ -60,4 +60,6 @@ Jetpack Joyride este un endless runner in care personajul principal, Barry Steak
 - [ ] tag de `git`: de exemplu `v0.3` sau `v1.0`
 
 ## Resurse
-- adăugați trimiteri către resursele externe care v-au ajutat sau pe care le-ați folosit
+- https://github.com/benjaminrosin/oop2_project-Jetpack_Joyride
+- https://www.geeksforgeeks.org/
+- 
