@@ -29,8 +29,19 @@ private:
     sf::Texture missileAlertTexture;
     float spawnTimer;
     float spawnTimerMax;
+    float gameSpeedMultiplier;
+    float gameSpeedMultiplierMax;
+    float survivalTime;
     bool endGame;
     bool isMenu;
+    bool isPaused;
+    bool isGameOver;
+    sf::Music backgroundMusic;
+
+    sf::SoundBuffer alertBuffer;
+    sf::Sound alertSound;
+    sf::SoundBuffer missileBuffer;
+    sf::Sound missileSound;
     MainMenu *mainMenu;
     Player* player;
     Object *missileAlert;
@@ -41,6 +52,10 @@ private:
     std::vector <Coin*> coins;
     float coinSpawnTimer;
     float coinSpawnTimerMax;
+    sf::SoundBuffer coinBuffer;
+    sf::Sound coinSound;
+
+
     int coinScore;
     void spawnCoinPattern();
     void spawnSingleCoin(float x, float y);
@@ -49,6 +64,8 @@ private:
     Background *background;
     Scoreboard* scoreboard;
     void initVariables();
+
+    void initSound();
     void initWindow();
     void initPlayer();
     void initMissile();
@@ -57,6 +74,7 @@ private:
     void initBackground();
     void initMenu();
     void initScoreboard();
+    void resetGame();
 
 
 

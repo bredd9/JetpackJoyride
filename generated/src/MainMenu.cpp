@@ -9,6 +9,8 @@ MainMenu::MainMenu(sf::RenderWindow* window,
     : window(window) {
     this->initTextures(bgPath, logoPath, buttonPath, fontPath);
     this->initButtons();
+    this->initPauseMenu();
+    this->initDeathScreen();
 }
 
 MainMenu::~MainMenu() {}
@@ -196,4 +198,162 @@ void MainMenu::showScoreboard(int highScore) {
 
         window->display();
     }
+}
+
+
+// ==========================================
+// --- IMPLEMENTĂRI NOI PENTRU MENIUL DE PAUZĂ ---
+// ==========================================
+
+void MainMenu::initPauseMenu() {
+    // 1. Fundal transparent negru
+    this->pauseOverlay.setSize(sf::Vector2f(window->getSize().x, window->getSize().y));
+    this->pauseOverlay.setFillColor(sf::Color(0, 0, 0, 150));
+
+    // 2. Buton Resume
+    this->resumeButton.setTexture(this->buttonTexture);
+    this->resumeButton.setPosition(window->getSize().x / 2.f - this->buttonTexture.getSize().x / 2.f, 300.f);
+
+    this->resumeText.setFont(this->font);
+    this->resumeText.setString("RESUME");
+    this->resumeText.setCharacterSize(45);
+    this->resumeText.setFillColor(sf::Color::White);
+    this->resumeText.setStyle(sf::Text::Bold);
+    this->resumeText.setOutlineThickness(3.f);
+    this->resumeText.setOutlineColor(sf::Color::Black);
+
+    sf::FloatRect resBounds = this->resumeText.getLocalBounds();
+    this->resumeText.setPosition(
+        this->resumeButton.getPosition().x + this->buttonTexture.getSize().x / 2.f - resBounds.width / 2.f,
+        this->resumeButton.getPosition().y + this->buttonTexture.getSize().y / 2.f - resBounds.height / 2.f - resBounds.top
+    );
+
+    // 3. Buton Main Menu
+    this->returnMenuButton.setTexture(this->buttonTexture);
+    this->returnMenuButton.setPosition(window->getSize().x / 2.f - this->buttonTexture.getSize().x / 2.f, 450.f);
+
+    this->returnMenuText.setFont(this->font);
+    this->returnMenuText.setString("MAIN MENU");
+    this->returnMenuText.setCharacterSize(45);
+    this->returnMenuText.setFillColor(sf::Color::White);
+    this->returnMenuText.setStyle(sf::Text::Bold);
+    this->returnMenuText.setOutlineThickness(3.f);
+    this->returnMenuText.setOutlineColor(sf::Color::Black);
+
+    sf::FloatRect retBounds = this->returnMenuText.getLocalBounds();
+    this->returnMenuText.setPosition(
+        this->returnMenuButton.getPosition().x + this->buttonTexture.getSize().x / 2.f - retBounds.width / 2.f,
+        this->returnMenuButton.getPosition().y + this->buttonTexture.getSize().y / 2.f - retBounds.height / 2.f - retBounds.top
+    );
+}
+
+void MainMenu::renderPause() const {
+    this->window->draw(this->pauseOverlay);
+    this->window->draw(this->resumeButton);
+    this->window->draw(this->resumeText);
+    this->window->draw(this->returnMenuButton);
+    this->window->draw(this->returnMenuText);
+}
+
+int MainMenu::handlePauseInput(const sf::Event& event) const {
+    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+        sf::Vector2f mousePos(event.mouseButton.x, event.mouseButton.y);
+
+        if (this->resumeButton.getGlobalBounds().contains(mousePos)) return 1;
+        if (this->returnMenuButton.getGlobalBounds().contains(mousePos)) return 2;
+    }
+    return 0; // Nu s-a apasat nimic
+}
+
+// ==========================================
+// --- IMPLEMENTĂRI DEATH SCREEN ---
+// ==========================================
+
+void MainMenu::initDeathScreen() {
+    // 1. Fundal semi-transparent roșiatic
+    this->deathOverlay.setSize(sf::Vector2f(window->getSize().x, window->getSize().y));
+    this->deathOverlay.setFillColor(sf::Color(150, 0, 0, 150)); // Roșu închis transparent
+
+    // 2. Textul uriaș GAME OVER
+    this->gameOverText.setFont(this->font);
+    this->gameOverText.setString("GAME OVER");
+    this->gameOverText.setCharacterSize(80);
+    this->gameOverText.setFillColor(sf::Color::Red);
+    this->gameOverText.setStyle(sf::Text::Bold);
+    this->gameOverText.setOutlineThickness(5.f);
+    this->gameOverText.setOutlineColor(sf::Color::Black);
+
+    sf::FloatRect goBounds = this->gameOverText.getLocalBounds();
+    this->gameOverText.setPosition(window->getSize().x / 2.f - goBounds.width / 2.f, 100.f);
+
+    // 3. Textul pentru scor (poziția o setăm dinamic în setDeathScore)
+    this->finalScoreText.setFont(this->font);
+    this->finalScoreText.setCharacterSize(50);
+    this->finalScoreText.setFillColor(sf::Color::Yellow);
+    this->finalScoreText.setStyle(sf::Text::Bold);
+    this->finalScoreText.setOutlineThickness(3.f);
+    this->finalScoreText.setOutlineColor(sf::Color::Black);
+
+    // 4. Butonul MAIN MENU
+    this->deathMenuButton.setTexture(this->buttonTexture);
+    this->deathMenuButton.setPosition(window->getSize().x / 2.f - this->buttonTexture.getSize().x / 2.f, 350.f);
+
+    this->deathMenuText.setFont(this->font);
+    this->deathMenuText.setString("MAIN MENU");
+    this->deathMenuText.setCharacterSize(45);
+    this->deathMenuText.setFillColor(sf::Color::White);
+    this->deathMenuText.setStyle(sf::Text::Bold);
+    this->deathMenuText.setOutlineThickness(3.f);
+    this->deathMenuText.setOutlineColor(sf::Color::Black);
+
+    sf::FloatRect menuBounds = this->deathMenuText.getLocalBounds();
+    this->deathMenuText.setPosition(
+        this->deathMenuButton.getPosition().x + this->buttonTexture.getSize().x / 2.f - menuBounds.width / 2.f,
+        this->deathMenuButton.getPosition().y + this->buttonTexture.getSize().y / 2.f - menuBounds.height / 2.f - menuBounds.top
+    );
+
+    // 5. Butonul EXIT
+    this->deathExitButton.setTexture(this->buttonTexture);
+    this->deathExitButton.setPosition(window->getSize().x / 2.f - this->buttonTexture.getSize().x / 2.f, 500.f);
+
+    this->deathExitText.setFont(this->font);
+    this->deathExitText.setString("EXIT");
+    this->deathExitText.setCharacterSize(45);
+    this->deathExitText.setFillColor(sf::Color::White);
+    this->deathExitText.setStyle(sf::Text::Bold);
+    this->deathExitText.setOutlineThickness(3.f);
+    this->deathExitText.setOutlineColor(sf::Color::Black);
+
+    sf::FloatRect exitBounds = this->deathExitText.getLocalBounds();
+    this->deathExitText.setPosition(
+        this->deathExitButton.getPosition().x + this->buttonTexture.getSize().x / 2.f - exitBounds.width / 2.f,
+        this->deathExitButton.getPosition().y + this->buttonTexture.getSize().y / 2.f - exitBounds.height / 2.f - exitBounds.top
+    );
+}
+
+void MainMenu::setDeathScore(int score) {
+    this->finalScoreText.setString("SCORE: " + std::to_string(score));
+    // Recentrăm textul după ce îi schimbăm valoarea
+    sf::FloatRect fsBounds = this->finalScoreText.getLocalBounds();
+    this->finalScoreText.setPosition(window->getSize().x / 2.f - fsBounds.width / 2.f, 220.f);
+}
+
+void MainMenu::renderDeath() const {
+    this->window->draw(this->deathOverlay);
+    this->window->draw(this->gameOverText);
+    this->window->draw(this->finalScoreText);
+    this->window->draw(this->deathMenuButton);
+    this->window->draw(this->deathMenuText);
+    this->window->draw(this->deathExitButton);
+    this->window->draw(this->deathExitText);
+}
+
+int MainMenu::handleDeathInput(const sf::Event& event) const {
+    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+        sf::Vector2f mousePos(event.mouseButton.x, event.mouseButton.y);
+
+        if (this->deathMenuButton.getGlobalBounds().contains(mousePos)) return 1; // Main Menu
+        if (this->deathExitButton.getGlobalBounds().contains(mousePos)) return 2; // Exit
+    }
+    return 0;
 }

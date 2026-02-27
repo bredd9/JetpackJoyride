@@ -5,7 +5,7 @@
 
 
 Player::Player() {
-    gravity=250.0f;
+    gravity=350.0f;
     jetpackPower=-300.0f;
     isUsingJetpack=false;
     velocity = sf::Vector2f(0.0f, 0.0f);

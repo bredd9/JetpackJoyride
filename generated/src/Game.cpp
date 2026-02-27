@@ -6,6 +6,7 @@
 Game::Game() {
     this->initVariables();
     this->initWindow();
+    this->initSound();
     this->initMenu();
     this->initBackground();
     this->initPlayer();
@@ -33,12 +34,54 @@ Game::~Game() {
 
 
 void Game::initVariables(){
+    this->isPaused = false;
     this->endGame = false;
+    this->isGameOver = false;
     this->spawnTimer=0.f;
     this->spawnTimerMax=10.f;
     this->coinSpawnTimerMax = 4.0f;
     this->coinSpawnTimer = 0.f;
+    this->gameSpeedMultiplier = 1.f;
+    this->gameSpeedMultiplierMax = 3.f;
+    this->survivalTime=0.f;
     this->coinScore = 0;
+
+
+}
+
+void Game::initSound() {
+
+    if (!this->backgroundMusic.openFromFile("C:/Users/Vlad/CLionProjects/JetpackJoyride2/resources/music.wav")) {
+        std::cout << "EROARE: Nu gasesc music.wav!\n";
+    } else {
+        this->backgroundMusic.setLoop(true);
+        this->backgroundMusic.setVolume(50.f); // Se va seta la 50
+
+    }
+
+    if (!this->missileBuffer.loadFromFile("C:/Users/Vlad/CLionProjects/JetpackJoyride2/resources/missileLaunch.wav")) {
+        std::cout << "EROARE: Nu gasesc missile.wav!\n";
+    } else {
+        this->missileSound.setBuffer(this->missileBuffer);
+        this->missileSound.setVolume(50.f);
+    }
+
+    // 1. Încărcăm sunetul pentru BĂNUȚ
+    if (!this->coinBuffer.loadFromFile("../resources/coin.wav")) {
+        std::cout << "EROARE: Nu gasesc coin.wav!\n";
+    } else {
+        this->coinSound.setBuffer(this->coinBuffer);
+        this->coinSound.setVolume(50.f);
+    }
+
+    // 2. Încărcăm sunetul pentru ALERTĂ
+    if (!this->alertBuffer.loadFromFile("../resources/alert.wav")) {
+        std::cout << "EROARE: Nu gasesc alert.wav!\n";
+    } else {
+        this->alertSound.setBuffer(this->alertBuffer);
+        this->alertSound.setVolume(50.f);
+    }
+
 }
 
 void Game::initWindow() {
@@ -183,6 +226,7 @@ void Game::updateCoins(float deltaTime) {
         // Check for collision with player
         if (Collision::checkCollision(this->player->getSprite(), coin->getSprite())) {
             this->coinScore++; // Increase score by 10 for each coin collected
+            this->coinSound.play();
             delete *it;
             it = this->coins.erase(it);
         } else if ((*it)->getX() + (*it)->getWidth() < 0) {
@@ -199,25 +243,94 @@ void Game::updateCoins(float deltaTime) {
 
 void Game::pollEvents() {
     while (this->window->pollEvent(this->event)) {
+
         switch (this->event.type) {
             case sf::Event::Closed:
                 this->window->close();
-            break;
+                break;
+
+            // ==========================================
+            // 1. TASTA ESC PENTRU PAUZĂ
+            // ==========================================
+            case sf::Event::KeyPressed:
+                if (this->event.key.code == sf::Keyboard::Escape) {
+                    // Putem pune pauză doar dacă ne jucăm (nu suntem în meniul principal)
+                    if (!this->isMenu && !this->isGameOver) {
+                        this->isPaused = !this->isPaused;
+                    }
+                }
+                break;
+
+            // ==========================================
+            // 2. APĂSARE CLICK (MENIU, PAUZĂ SAU SLIDER)
+            // ==========================================
             case sf::Event::MouseButtonPressed:
                 if (this->isMenu) {
+                    // CODUL TĂU VECHI: Suntem în meniul principal
                     int buttonIndex = this->mainMenu->handleInput(this->event);
                     switch (buttonIndex) {
                         case 0: // PLAY button
-                            this->isMenu = false; // Start the gameplay
-                        break;
+                            this->isMenu = false;
+                            this->resetGame();        // Start the gameplay
+                            this->backgroundMusic.play();
+                            break;
                         case 1: // SCOREBOARD button
-                            this->mainMenu->showScoreboard(this->scoreboard->getHighScore()); // Pass the high score
-                        break;
+                            this->mainMenu->showScoreboard(this->scoreboard->getHighScore());
+                            break;
                         default:
                             break;
                     }
                 }
-            break;
+                else if (this->isPaused) {
+                    // NOU: Suntem în meniul de pauză
+                    int action = this->mainMenu->handlePauseInput(this->event);
+                    if (action == 1) { // Butonul RESUME
+                        this->isPaused = false;
+                    } else if (action == 2) { // Butonul MAIN MENU
+                        this->isPaused = false;
+                        this->isMenu = true;
+                        this->backgroundMusic.stop();
+                        this->resetGame();
+
+                    }
+                }
+                else if (this->isGameOver) {
+                    // <--- NOU: LOGICA PENTRU DEATH SCREEN
+                    int action = this->mainMenu->handleDeathInput(this->event);
+                    if (action == 1) { // Butonul MAIN MENU
+                        this->isGameOver = false;
+                        this->isMenu = true;
+                        this->resetGame();
+                    } else if (action == 2) { // Butonul EXIT
+                        this->window->close(); // AICI închidem jocul de tot!
+                    }
+                }
+                else {
+                    // NOU: Suntem în joc. Trimitem click-ul la Scoreboard pentru Slider-ul de volum
+                    this->scoreboard->handleInput(this->event);
+                }
+                break;
+
+            // ==========================================
+            // 3. ELIBERARE CLICK (PENTRU SLIDER)
+            // ==========================================
+            case sf::Event::MouseButtonReleased:
+                // Când luăm degetul de pe click, anunțăm slider-ul să se oprească din "drag"
+                if (!this->isMenu && !this->isPaused) {
+                    this->scoreboard->handleInput(this->event);
+                }
+                break;
+
+            // ==========================================
+            // 4. MIȘCARE MOUSE (PENTRU SLIDER)
+            // ==========================================
+            case sf::Event::MouseMoved:
+                // Trimitem coordonatele mouse-ului pentru ca slider-ul să se miște vizual stânga-dreapta
+                if (!this->isMenu && !this->isPaused) {
+                    this->scoreboard->handleInput(this->event);
+                }
+                break;
+
             default:
                 break;
         }
@@ -227,15 +340,28 @@ void Game::pollEvents() {
 
 void Game::update(float deltaTime) {
     this->pollEvents();
-    if (this->isMenu) {
+    if (this->isMenu || this->isGameOver || this->isPaused) {
         // Skip gameplay updates when in the menu
         return;
     }
+    if (this->isPaused) return;
 
-    this->background->update(deltaTime);
+    if (this->gameSpeedMultiplier < this->gameSpeedMultiplierMax) {
+        this->gameSpeedMultiplier += 0.01f * deltaTime;
+    }
+
+    float scaledDeltaTime = deltaTime * this->gameSpeedMultiplier;
     this->player->update(deltaTime);
-    this->updateCoins(deltaTime);
-    this->scoreboard->update(coinScore); // Update the scoreboard with the player's speed
+    this->background->update(scaledDeltaTime);
+    this->updateCoins(scaledDeltaTime);
+    float currentVol = this->scoreboard->getVolume();
+    this->backgroundMusic.setVolume(currentVol);
+    this->missileSound.setVolume(currentVol);
+    this->coinSound.setVolume(currentVol);
+    this->alertSound.setVolume(currentVol);
+    this->survivalTime += deltaTime;
+    this->scoreboard->update(coinScore, this->survivalTime); // Update the scoreboard with the player's speed
+
 
     // Move player
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
@@ -247,26 +373,32 @@ void Game::update(float deltaTime) {
     auto* missileAlert = dynamic_cast<MissileAlert*>(this->missileAlert);
 
     if(missileAlert->isAlerting()) {
-       missileAlert->update(deltaTime);
+       missileAlert->update(scaledDeltaTime);
        if(!missileAlert->isAlerting()) {
+           if (!missile->isLaunched()) { // Să nu se audă de 60 de ori pe secundă
+               this->missileSound.play();
+           }
            missile->launch(missileAlert->getY());
        }
     }
     else if(missile->isLaunched()) {
-        missile->update(deltaTime);
+        missile->update(scaledDeltaTime);
     }
     else {
-        this->spawnTimer += deltaTime;
+        this->spawnTimer += scaledDeltaTime;
         if (this->spawnTimer >= this->spawnTimerMax) {
             missileAlert->alert();
+            this->alertSound.play();
             this->spawnTimer = 0.f;
         }
     }
 
     if (Collision::checkCollision(player->getSprite(), missile->getSprite())) {
-        std::cout << "Collision detected! Closing game..." << std::endl;
-        this->endGame = true; // Set endGame to true
-        this->window->close(); // Close the game window
+        std::cout << "Collision detected! GAME OVER." << std::endl;
+        this->isGameOver=true; // Set endGame to true
+        this-> backgroundMusic.stop(); // Stop background music
+        this->mainMenu->setDeathScore(this->coinScore); // Update the death screen with the final score
+        this->scoreboard->saveRecord();
     }
 }
 
@@ -278,6 +410,12 @@ void Game::render() const {
     if (this->isMenu) {
         this->mainMenu->render(); // Render the main menu
     } else {
+        this->scoreboard->draw(*this->window);
+        if (this->isPaused) {
+            this->mainMenu->renderPause();
+        } else if (this->isGameOver) {
+            this->mainMenu->renderDeath(); // <--- DESENĂM DEATH SCREEN-UL
+        }
         this->background->render(*this->window);
         this->player->render(*this->window);
         this->missileAlert->render(*this->window);
@@ -286,6 +424,12 @@ void Game::render() const {
             coin->render(*this->window);
         }
         this->scoreboard->draw(*this->window);
+        if (this->isPaused) {
+            this->mainMenu->renderPause();
+        }
+        else if(this->isGameOver) {
+            this->mainMenu->renderDeath();
+        }
     }
 
     this->window->display();
@@ -293,4 +437,31 @@ void Game::render() const {
 
 bool Game::running() const {
     return this->window->isOpen();
+}
+
+void Game::resetGame() {
+    // 1. Resetăm variabilele de scor și timp
+    this->survivalTime = 0.f;
+    this->coinScore = 0;
+    this->spawnTimer = 0.f;
+    this->coinSpawnTimer = 0.f;
+    this->gameSpeedMultiplier = 1.f;
+    this->scoreboard->reset();
+
+    // 2. Curățăm toate monedele de pe ecran
+    for (auto* coin : this->coins) {
+        delete coin;
+    }
+    this->coins.clear();
+
+    // 3. Recreăm Jucătorul și Rachetele de la zero
+    // Ștergem obiectele vechi din runda trecută
+    delete this->player;
+    delete this->missileAlert;
+    delete this->missile;
+
+    // Le generăm din nou pe cele noi, la pozițiile de start
+    this->initPlayer();
+    this->initMissileAlert(); // (Aici trimitem noul player creat)
+    this->initMissile();
 }
