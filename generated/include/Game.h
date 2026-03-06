@@ -14,6 +14,8 @@
 #include <Collision.h>
 #include <MainMenu.h>
 #include <Scoreboard.h>
+#include <Piggy.h>
+#include <Laser.h>
 #include <vector>
 
 class Game {
@@ -54,6 +56,28 @@ private:
     float coinSpawnTimerMax;
     sf::SoundBuffer coinBuffer;
     sf::Sound coinSound;
+
+    // --- PiggyBank ---
+    sf::Texture piggyBankTexture;
+    std::vector<PiggyBank*> piggyBanks;
+    float piggyTimer;
+    float piggyTimerMax;
+
+    // --- Lasere ---
+    sf::Texture laserTexture;
+    std::vector<Laser*> lasers;
+    float laserTimer;
+    float laserTimerMax;
+
+    // --- Sunete Noi ---
+    sf::SoundBuffer piggyBuffer;
+    sf::Sound piggySound;
+
+    sf::SoundBuffer laserBuffer;
+    sf::Sound laserSound;
+
+    // Metodă nouă pentru logica lor
+    void updateObstaclesAndItems(float deltaTime);
 
 
     int coinScore;

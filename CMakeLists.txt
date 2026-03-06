@@ -74,6 +74,10 @@ add_executable(${PROJECT_NAME}
         generated/src/Animate.cpp
         generated/include/Scoreboard.h
         generated/src/Scoreboard.cpp
+        generated/include/Piggy.h
+        generated/src/Piggy.cpp
+        generated/include/Laser.h
+        generated/src/Laser.cpp
 )
 
 include(cmake/CompilerFlags.cmake)

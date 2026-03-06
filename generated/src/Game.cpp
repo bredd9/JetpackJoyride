@@ -29,6 +29,15 @@ Game::~Game() {
     this->coins.clear();
     delete this->scoreboard;
 
+    for (auto* pb : this->piggyBanks) {
+        delete pb;
+    }
+    this->piggyBanks.clear();
+
+    for (auto* laser : this->lasers) {
+        delete laser;
+    }
+    this->lasers.clear();
 }
 
 
@@ -41,6 +50,10 @@ void Game::initVariables(){
     this->spawnTimerMax=10.f;
     this->coinSpawnTimerMax = 4.0f;
     this->coinSpawnTimer = 0.f;
+    this->piggyTimer = 0.f;
+    this->piggyTimerMax = 15.f; // O pușculiță la 15 secunde
+    this->laserTimer = 0.f;
+    this->laserTimerMax = 7.f;  // Un laser la 7 secunde
     this->gameSpeedMultiplier = 1.f;
     this->gameSpeedMultiplierMax = 3.f;
     this->survivalTime=0.f;
@@ -80,6 +93,22 @@ void Game::initSound() {
     } else {
         this->alertSound.setBuffer(this->alertBuffer);
         this->alertSound.setVolume(50.f);
+    }
+
+    // 3. Încărcăm sunetul pentru PIGGY BANK
+    if (!this->piggyBuffer.loadFromFile("../resources/Piggy.wav")) {
+        std::cout << "EROARE: Nu gasesc piggy.wav!\n";
+    } else {
+        this->piggySound.setBuffer(this->piggyBuffer);
+        this->piggySound.setVolume(50.f);
+    }
+
+    // 4. Încărcăm sunetul pentru LASER (cand te curentezi)
+    if (!this->laserBuffer.loadFromFile("../resources/Laser.wav")) {
+        std::cout << "EROARE: Nu gasesc zap.wav!\n";
+    } else {
+        this->laserSound.setBuffer(this->laserBuffer);
+        this->laserSound.setVolume(50.f);
     }
 
 }
@@ -130,6 +159,14 @@ void Game::initTextures() {
     // 3. Coin
     if (!this->coinTexture.loadFromFile("../resources/Coin.png")) {
         std::cout << "ERROR: Coin texture not found!\n";
+    }
+    //4. Piggy
+    if (!this->piggyBankTexture.loadFromFile("../resources/Piggy.png")) {
+        std::cout << "ERROR: PiggyBank texture not found!\n";
+    }
+    //5. Laser
+    if (!this->laserTexture.loadFromFile("../resources/Laser.png")) {
+        std::cout << "ERROR: Laser texture not found!\n";
     }
 }
 
@@ -241,6 +278,89 @@ void Game::updateCoins(float deltaTime) {
 
 }
 
+void Game::updateObstaclesAndItems(float deltaTime) {
+    // ==========================================
+    // 1. SPAWN & UPDATE PIGGY BANK
+    // ==========================================
+    this->piggyTimer += deltaTime;
+    if (this->piggyTimer >= this->piggyTimerMax) {
+        // Generăm un Y aleatoriu pe ecran (între 50 și windowHeight - 100)
+        float startY = static_cast<float>(rand() % (windowHeight - 150) + 50);
+        float startX = windowWidth + 50.f;
+
+        // Adăugăm pușculița
+        this->piggyBanks.push_back(new PiggyBank(this->piggyBankTexture, startX, startY, 50));
+        this->piggyTimer = 0.f;
+    }
+
+    for (auto it = this->piggyBanks.begin(); it != this->piggyBanks.end(); ) {
+        (*it)->update(deltaTime);
+
+        // Coliziune cu jucătorul
+        if (Collision::checkCollision(this->player->getSprite(), (*it)->getSprite())) {
+            this->coinScore += (*it)->getValue(); // Adaugă 50 de monede
+            this->piggySound.play();              // Sunet de bani
+            delete *it;
+            it = this->piggyBanks.erase(it);
+        }
+        // Ieșire de pe ecran
+        else if ((*it)->getX() + 150.f < 0) {
+            delete *it;
+            it = this->piggyBanks.erase(it);
+        }
+        else {
+            ++it;
+        }
+    }
+
+    // ==========================================
+    // 2. SPAWN & UPDATE LASERE
+    // ==========================================
+    this->laserTimer += deltaTime;
+    if (this->laserTimer >= this->laserTimerMax) {
+        // --- MODIFICAREA ESTE AICI ---
+
+        // 1. Alegem un unghi la întâmplare
+        float possibleAngles[] = {0.f, 90.f, 45.f, 135.f};
+        int randomAngleIndex = rand() % 4;
+        float chosenAngle = possibleAngles[randomAngleIndex];
+
+        // 2. Generăm Y-ul cu o marjă de siguranță ca să nu iasă din ecran
+        // Având în vedere că înălțimea e 420, folosim o marjă de 210 (jumătate)
+        int margin = 210;
+        float startY = static_cast<float>(rand() % (windowHeight - 2 * margin) + margin);
+        float startX = windowWidth + 200.f; // Îl spawnăm puțin mai în dreapta
+
+        // 3. Creăm laserul cu noul parametru chosenAngle!
+        this->lasers.push_back(new Laser(this->laserTexture, startX, startY, 102, 420, 4, chosenAngle));
+
+        this->laserTimer = 0.f;
+    }
+
+    for (auto it = this->lasers.begin(); it != this->lasers.end(); ) {
+        (*it)->update(deltaTime);
+
+        // Coliziune cu jucătorul (GAME OVER)
+        // Coliziune cu jucătorul (GAME OVER) - ACUM FOLOSESTE checkRotatedCollision!
+        if (Collision::checkRotatedCollision(this->player->getSprite(), (*it)->getSprite(), 0.6f, 0.6f, 0.3f, 0.9f)) {
+            std::cout << "Lovit de Laser! GAME OVER." << std::endl;
+            this->laserSound.play();
+            this->isGameOver = true;
+            this->backgroundMusic.stop();
+            this->mainMenu->setDeathScore(this->coinScore);
+            this->scoreboard->saveRecord();
+            break; // Ieșim din buclă pentru că a murit
+        }
+        // Ieșire de pe ecran (am crescut la 500 ca să fim siguri că dispare complet inainte sa il stergem)
+        else if ((*it)->getX() + 500.f < 0) {
+            delete *it;
+            it = this->lasers.erase(it);
+        }
+        else {
+            ++it;
+        }
+    }
+}
 void Game::pollEvents() {
     while (this->window->pollEvent(this->event)) {
 
@@ -354,11 +474,14 @@ void Game::update(float deltaTime) {
     this->player->update(deltaTime);
     this->background->update(scaledDeltaTime);
     this->updateCoins(scaledDeltaTime);
+    this->updateObstaclesAndItems(scaledDeltaTime);
     float currentVol = this->scoreboard->getVolume();
     this->backgroundMusic.setVolume(currentVol);
     this->missileSound.setVolume(currentVol);
     this->coinSound.setVolume(currentVol);
     this->alertSound.setVolume(currentVol);
+    this->piggySound.setVolume(currentVol);
+    this->laserSound.setVolume(currentVol);
     this->survivalTime += deltaTime;
     this->scoreboard->update(coinScore, this->survivalTime); // Update the scoreboard with the player's speed
 
@@ -393,7 +516,7 @@ void Game::update(float deltaTime) {
         }
     }
 
-    if (Collision::checkCollision(player->getSprite(), missile->getSprite())) {
+    if (Collision::checkCollision(player->getSprite(), missile->getSprite(), 0.6f, 0.8f, 0.5f, 0.5f)) {
         std::cout << "Collision detected! GAME OVER." << std::endl;
         this->isGameOver=true; // Set endGame to true
         this-> backgroundMusic.stop(); // Stop background music
@@ -422,6 +545,12 @@ void Game::render() const {
         this->missile->render(*this->window);
         for (auto* coin : this->coins) {
             coin->render(*this->window);
+        }
+        for (auto* pb : this->piggyBanks) {
+            pb->render(*this->window);
+        }
+        for (auto* laser : this->lasers) {
+            laser->render(*this->window);
         }
         this->scoreboard->draw(*this->window);
         if (this->isPaused) {
@@ -453,6 +582,20 @@ void Game::resetGame() {
         delete coin;
     }
     this->coins.clear();
+
+    // Resetare PiggyBanks
+    for (auto* pb : this->piggyBanks) {
+        delete pb;
+    }
+    this->piggyBanks.clear();
+    this->piggyTimer = 0.f;
+
+    // Resetare Lasere
+    for (auto* laser : this->lasers) {
+        delete laser;
+    }
+    this->lasers.clear();
+    this->laserTimer = 0.f;
 
     // 3. Recreăm Jucătorul și Rachetele de la zero
     // Ștergem obiectele vechi din runda trecută
