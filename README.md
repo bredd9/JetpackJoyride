@@ -1,65 +1,84 @@
 # Jetpack Joyride
 
-## Descriere proiect
-Mi-am ales acest proiect cu dorinta de a recrea un joc al copilariei mele, dar intr-un mod simplificat. 
-Jetpack Joyride este un endless runner in care personajul principal, Barry Steakfries, trebuie ajutat sa colecteze cati mai multi bani si in acelasi timp sa se fereasca de obstacole care pot aparea. In final, daca scorul obtinut de catre utilizator(acesta fiind calculat prin numarul de bani obtinuti) este destul de mare, acesta este trecut in leaderboardul aplicatiei. 
-## Milestone #0
+A C++ implementation of the popular endless runner game Jetpack Joyride using the SFML graphics library. 
 
-- [ ] Nume proiect (poate fi schimbat ulterior)
-- [ ] Scurtă descriere a temei alese, ce v-ați propus să implementați
+## Description
 
-## Milestone #1
+This project is a clone of the classic Jetpack Joyride game where players control a character with a jetpack, avoiding dangerous obstacles, collecting coins, and trying to achieve the highest score possible. The game features dynamic difficulty, a custom physics/collision engine, and various interactive UI elements that make the gameplay challenging and highly entertaining.
 
-#### Cerințe
-- [ ] definirea a minim **3-4 clase** folosind compunere cu clasele definite de voi
-- [ ] constructori de inițializare cu parametri
-- [ ] pentru o aceeași (singură) clasă: constructor de copiere, `operator=` de copiere, destructor
-- [ ] `operator<<` pentru toate clasele pentru afișare (std::ostream)
-- [ ] cât mai multe `const` (unde este cazul)
-- [ ] implementarea a minim 3 funcții membru publice pentru funcționalități specifice temei alese, dintre care cel puțin 1-2 funcții mai complexe
-  - nu doar citiri/afișări sau adăugat/șters elemente într-un/dintr-un vector
-- [ ] scenariu de utilizare a claselor definite:
-  - preferabil sub formă de teste unitare, mai ales dacă vorbim de aplicații consolă 
-  - crearea de obiecte și apelarea tuturor funcțiilor membru publice în main
-  - vor fi adăugate în fișierul `tastatura.txt` DOAR exemple de date de intrare de la tastatură (dacă există); dacă aveți nevoie de date din fișiere, creați alte fișiere separat
-- [ ] tag de `git`: de exemplu `v0.1`
-- [ ] serviciu de integrare continuă (CI); exemplu: GitHub Actions
+## Features
 
-## Milestone #2
+* **Player Character** with gravity and jetpack mechanics (controlled via Spacebar)
+* **Multiple game objects and obstacles:**
+  * Procedurally generated **Coin patterns** (lines, blocks, diagonals, zig-zags)
+  * **Piggy Banks** that provide bonus coins upon collection
+  * **Homing Missiles** with a dynamic warning/alert system
+  * **Animated Laser beams (Zappers)** spawning at various angles (vertical, horizontal, diagonal)
+* **Score System** tracking both collected coins and survival time, featuring persistent High Score tracking saved to a local file
+* **Dynamic Difficulty** where the game speed multiplier progressively increases over time
+* **Complete Audio System:**
+  * Background music and specific sound effects (coin collect, laser zap, piggy bank jackpot, missile launch/alert)
+  * Interactive UI Volume Slider controlled via mouse drag-and-drop
+* **Advanced Menu System** featuring:
+  * Main Menu with Play and Scoreboard options
+  * Pause functionality (ESC key)
+  * Death Screen (Game Over) displaying the final score and options to restart or exit
+* **Advanced Collision Detection:** Custom hitbox shrinking and Inverse Transform mathematics to handle pixel-perfect collisions with rotated objects (like lasers)
 
-#### Cerințe
-- [ ] separarea codului din clase în `.h` (sau `.hpp`) și `.cpp`
-- [ ] moșteniri:
-  - minim o clasă de bază și **3 clase derivate** din aceeași ierarhie
-  - ierarhia trebuie să fie cu bază proprie, nu derivată dintr-o clasă predefinită
-  - [ ] funcții virtuale (pure) apelate prin pointeri de bază din clasa care conține atributul de tip pointer de bază
-    - minim o funcție virtuală va fi **specifică temei** (e.g. nu simple citiri/afișări)
-    - constructori virtuali (clone): sunt necesari, dar nu se consideră funcții specifice temei
-    - afișare virtuală, interfață non-virtuală
-  - [ ] apelarea constructorului din clasa de bază din constructori din derivate
-  - [ ] clasă cu atribut de tip pointer la o clasă de bază cu derivate; aici apelați funcțiile virtuale prin pointer de bază, eventual prin interfața non-virtuală din bază
-    - [ ] suprascris cc/op= pentru copieri/atribuiri corecte, copy and swap
-    - [ ] `dynamic_cast`/`std::dynamic_pointer_cast` pentru downcast cu sens
-    - [ ] smart pointers (recomandat, opțional)
-- [ ] excepții
-  - [ ] ierarhie proprie cu baza `std::exception` sau derivată din `std::exception`; minim **3** clase pentru erori specifice
-  - [ ] utilizare cu sens: de exemplu, `throw` în constructor (sau funcție care întoarce un obiect), `try`/`catch` în `main`
-  - această ierarhie va fi complet independentă de ierarhia cu funcții virtuale
-- [ ] funcții și atribute `static`
-- [ ] STL
-- [ ] cât mai multe `const`
-- [ ] funcții *de nivel înalt*, de eliminat cât mai mulți getters/setters/funcții low-level
-- [ ] tag de `git`: de exemplu `v0.2`
+## Prerequisites
 
-## Milestone #3
+* **CMake** (version 3.26 or higher)
+* **SFML 2.6.x**
+* **C++ compiler** with C++17 support
+* Windows operating system (or Linux/macOS with proper SFML configuration)
 
-#### Cerințe
-- [ ] 2 șabloane de proiectare (design patterns)
-- [ ] o clasă șablon cu sens; minim **2 instanțieri**
-  - [ ] preferabil și o funcție șablon (template) cu sens; minim 2 instanțieri
-- [ ] tag de `git`: de exemplu `v0.3` sau `v1.0`
+## Building the Project
 
-## Resurse
-- https://github.com/benjaminrosin/oop2_project-Jetpack_Joyride
-- https://www.geeksforgeeks.org/
-- 
+Make sure you have SFML 2.6 installed and properly linked in your system environment or CMake configuration (e.g., at `C:/SFML/SFML-2.6.0`).
+
+1. Clone the repository
+  
+2. Create a build directory:
+   ```bash
+   mkdir build
+   cd build
+   ```
+3. Configure and build the project:
+   ```bash
+   cmake ..
+   cmake --build .
+   ```
+
+## Controls
+
+* **Spacebar / Up Arrow**: Hold to ignite the jetpack and fly up; release to fall
+* **ESC**: Pause / Resume the game
+* **Left Mouse Click**: Interact with menus (Play, Main Menu, Exit)
+* **Mouse Drag**: Adjust the master volume using the in-game UI slider
+
+## Project Structure
+
+* `src/` - Source files (`.cpp`) implementing the game logic
+* `include/` - Header files (`.h`) containing class declarations
+* `resources/` - Game assets including textures (`.png`), fonts (`.ttf`), and audio files (`.wav`)
+* `CMakeLists.txt` - CMake configuration file for building the project
+
+## Game Components
+
+### Player
+* Gravity and velocity-based movement states
+* Screen bound restrictions to keep the player in the playable area
+
+### Objects
+* Uses Object-Oriented Programming (OOP) with a base `Object` class for polymorphism
+* **Static/Pick-up objects**: Coins, Piggy Banks
+* **Moving hazards**: Missiles, Animated Lasers 
+
+### Systems & States
+* **Collision Engine**: Uses Axis-Aligned Bounding Boxes (AABB) with customizable hitbox insets, and complex Rotated Collision checks for angled obstacles
+* **Game States**: Handled seamlessly within the main game loop (`isMenu`, `isPaused`, `isGameOver`)
+
+## Author
+
+* **Stoica Vlad-Alexandru** 
+
