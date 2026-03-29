@@ -5,7 +5,6 @@
 #ifndef GAME_H
 #define GAME_H
 
-
 #include <Player.h>
 #include <Missile.h>
 #include <MissileAlert.h>
@@ -19,8 +18,9 @@
 #include <vector>
 
 class Game {
-
 private:
+    Game();
+
     const int windowWidth = 1200;
     const int windowHeight = 791;
     sf::VideoMode videoMode;
@@ -49,36 +49,30 @@ private:
     Object *missileAlert;
     Object *missile;
 
-    //  Coins
     sf::Texture coinTexture;
-    std::vector <Coin*> coins;
+    std::vector<Coin*> coins;
     float coinSpawnTimer;
     float coinSpawnTimerMax;
     sf::SoundBuffer coinBuffer;
     sf::Sound coinSound;
 
-    // --- PiggyBank ---
     sf::Texture piggyBankTexture;
     std::vector<PiggyBank*> piggyBanks;
     float piggyTimer;
     float piggyTimerMax;
 
-    // --- Lasere ---
     sf::Texture laserTexture;
     std::vector<Laser*> lasers;
     float laserTimer;
     float laserTimerMax;
 
-    // --- Sunete Noi ---
     sf::SoundBuffer piggyBuffer;
     sf::Sound piggySound;
 
     sf::SoundBuffer laserBuffer;
     sf::Sound laserSound;
 
-    // Metodă nouă pentru logica lor
     void updateObstaclesAndItems(float deltaTime);
-
 
     int coinScore;
     void spawnCoinPattern();
@@ -100,17 +94,17 @@ private:
     void initScoreboard();
     void resetGame();
 
-
-
-
 public:
-    Game();
+    static Game& getInstance();
+
+    Game(const Game&) = delete;
+    Game& operator=(const Game&) = delete;
+
     ~Game();
     bool running() const;
     void pollEvents();
     void update(float deltaTime);
     void render() const;
-
 };
 
-#endif //GAME_H
+#endif // GAME_H

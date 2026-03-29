@@ -78,6 +78,8 @@ add_executable(${PROJECT_NAME}
         generated/src/Piggy.cpp
         generated/include/Laser.h
         generated/src/Laser.cpp
+        generated/include/EntityFactory.h
+        generated/src/EntityFactory.cpp
 )
 
 include(cmake/CompilerFlags.cmake)

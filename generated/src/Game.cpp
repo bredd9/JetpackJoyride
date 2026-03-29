@@ -2,6 +2,12 @@
 //
 
 #include "../include/Game.h"
+#include "../include/EntityFactory.h"
+
+Game& Game::getInstance() {
+    static Game instance;
+    return instance;
+}
 
 Game::Game() {
     this->initVariables();
@@ -14,7 +20,6 @@ Game::Game() {
     this->initMissileAlert();
     this->initMissile();
     this->initScoreboard();
-
 }
 
 Game::~Game() {
@@ -23,10 +28,13 @@ Game::~Game() {
     delete this->missile;
     delete this->missileAlert;
     delete this->mainMenu;
+    delete this->background;
+
     for (auto* coin : this->coins) {
         delete coin;
     }
     this->coins.clear();
+
     delete this->scoreboard;
 
     for (auto* pb : this->piggyBanks) {
@@ -40,82 +48,71 @@ Game::~Game() {
     this->lasers.clear();
 }
 
-
-
-void Game::initVariables(){
+void Game::initVariables() {
     this->isPaused = false;
     this->endGame = false;
     this->isGameOver = false;
-    this->spawnTimer=0.f;
-    this->spawnTimerMax=10.f;
+    this->spawnTimer = 0.f;
+    this->spawnTimerMax = 10.f;
     this->coinSpawnTimerMax = 4.0f;
     this->coinSpawnTimer = 0.f;
     this->piggyTimer = 0.f;
-    this->piggyTimerMax = 15.f; // O pușculiță la 15 secunde
+    this->piggyTimerMax = 15.f;
     this->laserTimer = 0.f;
-    this->laserTimerMax = 7.f;  // Un laser la 7 secunde
+    this->laserTimerMax = 7.f;
     this->gameSpeedMultiplier = 1.f;
     this->gameSpeedMultiplierMax = 3.f;
-    this->survivalTime=0.f;
+    this->survivalTime = 0.f;
     this->coinScore = 0;
-
-
 }
 
 void Game::initSound() {
-
-    if (!this->backgroundMusic.openFromFile("C:/Users/Vlad/CLionProjects/JetpackJoyride2/resources/music.wav")) {
-        std::cout << "EROARE: Nu gasesc music.wav!\n";
+    if (!this->backgroundMusic.openFromFile("../resources/music.wav")) {
+        std::cout << "ERROR: Could not find music.wav!\n";
     } else {
         this->backgroundMusic.setLoop(true);
-        this->backgroundMusic.setVolume(50.f); // Se va seta la 50
-
+        this->backgroundMusic.setVolume(50.f);
     }
 
-    if (!this->missileBuffer.loadFromFile("C:/Users/Vlad/CLionProjects/JetpackJoyride2/resources/missileLaunch.wav")) {
-        std::cout << "EROARE: Nu gasesc missile.wav!\n";
+    if (!this->missileBuffer.loadFromFile("../resources/missileLaunch.wav")) {
+        std::cout << "ERROR: Could not find missileLaunch.wav!\n";
     } else {
         this->missileSound.setBuffer(this->missileBuffer);
         this->missileSound.setVolume(50.f);
     }
 
-    // 1. Încărcăm sunetul pentru BĂNUȚ
     if (!this->coinBuffer.loadFromFile("../resources/coin.wav")) {
-        std::cout << "EROARE: Nu gasesc coin.wav!\n";
+        std::cout << "ERROR: Could not find coin.wav!\n";
     } else {
         this->coinSound.setBuffer(this->coinBuffer);
         this->coinSound.setVolume(50.f);
     }
 
-    // 2. Încărcăm sunetul pentru ALERTĂ
     if (!this->alertBuffer.loadFromFile("../resources/alert.wav")) {
-        std::cout << "EROARE: Nu gasesc alert.wav!\n";
+        std::cout << "ERROR: Could not find alert.wav!\n";
     } else {
         this->alertSound.setBuffer(this->alertBuffer);
         this->alertSound.setVolume(50.f);
     }
 
-    // 3. Încărcăm sunetul pentru PIGGY BANK
     if (!this->piggyBuffer.loadFromFile("../resources/Piggy.wav")) {
-        std::cout << "EROARE: Nu gasesc piggy.wav!\n";
+        std::cout << "ERROR: Could not find piggy.wav!\n";
     } else {
         this->piggySound.setBuffer(this->piggyBuffer);
         this->piggySound.setVolume(50.f);
     }
 
-    // 4. Încărcăm sunetul pentru LASER (cand te curentezi)
     if (!this->laserBuffer.loadFromFile("../resources/Laser.wav")) {
-        std::cout << "EROARE: Nu gasesc zap.wav!\n";
+        std::cout << "ERROR: Could not find Laser.wav!\n";
     } else {
         this->laserSound.setBuffer(this->laserBuffer);
         this->laserSound.setVolume(50.f);
     }
-
 }
 
 void Game::initWindow() {
-    this->videoMode=sf::VideoMode(windowWidth,windowHeight);
-    this->window=new sf::RenderWindow(this->videoMode,"JetpackJoyride",sf::Style::Default);
+    this->videoMode = sf::VideoMode(windowWidth, windowHeight);
+    this->window = new sf::RenderWindow(this->videoMode, "JetpackJoyride", sf::Style::Default);
     this->window->setFramerateLimit(144);
     this->window->setVerticalSyncEnabled(false);
 }
@@ -126,45 +123,34 @@ void Game::initMenu() {
                                   "../resources/Logo.png",
                                   "../resources/ButtonMenu.png",
                                   "../resources/New Athletic M54.ttf");
-    this->isMenu = true; // Start in the menu phase
+    this->isMenu = true;
 }
 
 void Game::initBackground() {
     this->background = new Background();
-    constexpr float backgroundSpeed = 300.f; // Scrolling speed for the background
+    constexpr float backgroundSpeed = 300.f;
     if (!this->background->initialize("../resources/Background.png", backgroundSpeed, windowWidth, windowHeight)) {
         throw std::runtime_error("Failed to initialize background");
-         // Close the game if initialization fails
     }
 }
-
-
-
 
 void Game::initPlayer() {
     this->player = new Player();
 }
 
 void Game::initTextures() {
-    // 1. Missile
     if (!this->missileTexture.loadFromFile("../resources/Missile.png")) {
         std::cout << "ERROR: Missile texture not found!\n";
     }
-
-    // 2. Alert
     if (!this->missileAlertTexture.loadFromFile("../resources/MissileAlert.png")) {
         std::cout << "ERROR: Alert texture not found!\n";
     }
-
-    // 3. Coin
     if (!this->coinTexture.loadFromFile("../resources/Coin.png")) {
         std::cout << "ERROR: Coin texture not found!\n";
     }
-    //4. Piggy
     if (!this->piggyBankTexture.loadFromFile("../resources/Piggy.png")) {
         std::cout << "ERROR: PiggyBank texture not found!\n";
     }
-    //5. Laser
     if (!this->laserTexture.loadFromFile("../resources/Laser.png")) {
         std::cout << "ERROR: Laser texture not found!\n";
     }
@@ -173,12 +159,12 @@ void Game::initTextures() {
 void Game::initMissileAlert() {
     this->missileAlert = new MissileAlert(this->missileAlertTexture, this->player);
 }
+
 void Game::initMissile() {
     this->missile = new Missile(this->missileTexture);
 }
 
-
-void Game::initScoreboard(){
+void Game::initScoreboard() {
     this->scoreboard = new Scoreboard("../resources/New Athletic M54.ttf", "../resources/record_distance.txt");
 }
 
@@ -187,64 +173,49 @@ void Game::spawnCoinPattern() {
     float startX = windowWidth + 50.f;
     int patternType = rand() % 4;
     float spacing = 45.f;
-    
-    switch(patternType) {
-        case 0: // Horizontal line
+
+    switch (patternType) {
+        case 0:
             for (int i = 0; i < 5; i++) {
                 spawnSingleCoin(startX + (i * spacing), startY);
             }
             break;
-
-        // Block
         case 1:
             for (int col = 0; col < 3; col++) {
                 for (int row = 0; row < 3; row++) {
                     spawnSingleCoin(startX + (col * spacing), startY + (row * spacing));
                 }
             }
-        break;
-
-        // Diagonal
+            break;
         case 2:
-
-                if (rand() % 2 == 0) {
-                    // Up
-                    for (int i = 0; i < 5; i++) {
-                        spawnSingleCoin(startX + (i * spacing), startY - (i * spacing));
-                    }
-                } else {
-                    // Down
-                    for (int i = 0; i < 5; i++) {
-                        spawnSingleCoin(startX + (i * spacing), startY + (i * spacing));
-                    }
+            if (rand() % 2 == 0) {
+                for (int i = 0; i < 5; i++) {
+                    spawnSingleCoin(startX + (i * spacing), startY - (i * spacing));
                 }
-        break;
-
-        // Zig-zag
-        case 3:
-            //Down
-                for (int i = 0; i < 3; i++) {
+            } else {
+                for (int i = 0; i < 5; i++) {
                     spawnSingleCoin(startX + (i * spacing), startY + (i * spacing));
                 }
-
-        for (int i = 0; i < 3; i++) {
-            //Up
-            // Offset of 3 spaces + i spaces
-            spawnSingleCoin(startX + ((3 + i) * spacing), startY + ((2 - i) * spacing));
-        }
-        break;
+            }
+            break;
+        case 3:
+            for (int i = 0; i < 3; i++) {
+                spawnSingleCoin(startX + (i * spacing), startY + (i * spacing));
+            }
+            for (int i = 0; i < 3; i++) {
+                spawnSingleCoin(startX + ((3 + i) * spacing), startY + ((2 - i) * spacing));
+            }
+            break;
     }
 
-    // If the type of coins was long, increase the pause before the next spawn
-    this->coinSpawnTimerMax = static_cast<float>(rand() % 2 + 2); // Pauză între 2 și 3 secunde
-    }
-
+    this->coinSpawnTimerMax = static_cast<float>(rand() % 2 + 2);
+}
 
 void Game::spawnSingleCoin(float x, float y) {
     if (y < 0) y = 0;
     if (y > windowHeight - 40) y = windowHeight - 40;
 
-    Coin* coin = new Coin(this->coinTexture, x, y);
+    Coin* coin = EntityFactory::createCoin(this->coinTexture, x, y);
     this->coins.push_back(coin);
 }
 
@@ -260,211 +231,157 @@ void Game::updateCoins(float deltaTime) {
         Coin* coin = *it;
         coin->update(deltaTime);
 
-        // Check for collision with player
         if (Collision::checkCollision(this->player->getSprite(), coin->getSprite())) {
-            this->coinScore++; // Increase score by 10 for each coin collected
+            this->coinScore++;
             this->coinSound.play();
             delete *it;
             it = this->coins.erase(it);
         } else if ((*it)->getX() + (*it)->getWidth() < 0) {
-            // Remove coin if it goes off-screen
-            delete *it; // Free memory
+            delete *it;
             it = this->coins.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
 
+void Game::updateObstaclesAndItems(float deltaTime) {
+    this->piggyTimer += deltaTime;
+    if (this->piggyTimer >= this->piggyTimerMax) {
+        float startY = static_cast<float>(rand() % (windowHeight - 150) + 50);
+        float startX = windowWidth + 50.f;
+
+        this->piggyBanks.push_back(
+            EntityFactory::createPiggyBank(this->piggyBankTexture, startX, startY, 50)
+        );
+        this->piggyTimer = 0.f;
+    }
+
+    for (auto it = this->piggyBanks.begin(); it != this->piggyBanks.end();) {
+        (*it)->update(deltaTime);
+
+        if (Collision::checkCollision(this->player->getSprite(), (*it)->getSprite())) {
+            this->coinScore += (*it)->getValue();
+            this->piggySound.play();
+            delete *it;
+            it = this->piggyBanks.erase(it);
+        } else if ((*it)->getX() + 150.f < 0) {
+            delete *it;
+            it = this->piggyBanks.erase(it);
         } else {
             ++it;
         }
     }
 
-}
-
-void Game::updateObstaclesAndItems(float deltaTime) {
-    // ==========================================
-    // 1. SPAWN & UPDATE PIGGY BANK
-    // ==========================================
-    this->piggyTimer += deltaTime;
-    if (this->piggyTimer >= this->piggyTimerMax) {
-        // Generăm un Y aleatoriu pe ecran (între 50 și windowHeight - 100)
-        float startY = static_cast<float>(rand() % (windowHeight - 150) + 50);
-        float startX = windowWidth + 50.f;
-
-        // Adăugăm pușculița
-        this->piggyBanks.push_back(new PiggyBank(this->piggyBankTexture, startX, startY, 50));
-        this->piggyTimer = 0.f;
-    }
-
-    for (auto it = this->piggyBanks.begin(); it != this->piggyBanks.end(); ) {
-        (*it)->update(deltaTime);
-
-        // Coliziune cu jucătorul
-        if (Collision::checkCollision(this->player->getSprite(), (*it)->getSprite())) {
-            this->coinScore += (*it)->getValue(); // Adaugă 50 de monede
-            this->piggySound.play();              // Sunet de bani
-            delete *it;
-            it = this->piggyBanks.erase(it);
-        }
-        // Ieșire de pe ecran
-        else if ((*it)->getX() + 150.f < 0) {
-            delete *it;
-            it = this->piggyBanks.erase(it);
-        }
-        else {
-            ++it;
-        }
-    }
-
-    // ==========================================
-    // 2. SPAWN & UPDATE LASERE
-    // ==========================================
     this->laserTimer += deltaTime;
     if (this->laserTimer >= this->laserTimerMax) {
-        // --- MODIFICAREA ESTE AICI ---
-
-        // 1. Alegem un unghi la întâmplare
         float possibleAngles[] = {0.f, 90.f, 45.f, 135.f};
         int randomAngleIndex = rand() % 4;
         float chosenAngle = possibleAngles[randomAngleIndex];
 
-        // 2. Generăm Y-ul cu o marjă de siguranță ca să nu iasă din ecran
-        // Având în vedere că înălțimea e 420, folosim o marjă de 210 (jumătate)
         int margin = 210;
         float startY = static_cast<float>(rand() % (windowHeight - 2 * margin) + margin);
-        float startX = windowWidth + 200.f; // Îl spawnăm puțin mai în dreapta
+        float startX = windowWidth + 200.f;
 
-        // 3. Creăm laserul cu noul parametru chosenAngle!
-        this->lasers.push_back(new Laser(this->laserTexture, startX, startY, 102, 420, 4, chosenAngle));
+        this->lasers.push_back(
+            EntityFactory::createLaser(this->laserTexture, startX, startY, 102, 420, 4, chosenAngle)
+        );
 
         this->laserTimer = 0.f;
     }
 
-    for (auto it = this->lasers.begin(); it != this->lasers.end(); ) {
+    for (auto it = this->lasers.begin(); it != this->lasers.end();) {
         (*it)->update(deltaTime);
 
-        // Coliziune cu jucătorul (GAME OVER)
-        // Coliziune cu jucătorul (GAME OVER) - ACUM FOLOSESTE checkRotatedCollision!
         if (Collision::checkRotatedCollision(this->player->getSprite(), (*it)->getSprite(), 0.6f, 0.6f, 0.3f, 0.9f)) {
-            std::cout << "Lovit de Laser! GAME OVER." << std::endl;
+            std::cout << "Hit by laser! GAME OVER." << std::endl;
             this->laserSound.play();
             this->isGameOver = true;
             this->backgroundMusic.stop();
             this->mainMenu->setDeathScore(this->coinScore);
             this->scoreboard->saveRecord();
-            break; // Ieșim din buclă pentru că a murit
-        }
-        // Ieșire de pe ecran (am crescut la 500 ca să fim siguri că dispare complet inainte sa il stergem)
-        else if ((*it)->getX() + 500.f < 0) {
+            break;
+        } else if ((*it)->getX() + 500.f < 0) {
             delete *it;
             it = this->lasers.erase(it);
-        }
-        else {
+        } else {
             ++it;
         }
     }
 }
+
 void Game::pollEvents() {
     while (this->window->pollEvent(this->event)) {
-
         switch (this->event.type) {
             case sf::Event::Closed:
                 this->window->close();
                 break;
-
-            // ==========================================
-            // 1. TASTA ESC PENTRU PAUZĂ
-            // ==========================================
             case sf::Event::KeyPressed:
                 if (this->event.key.code == sf::Keyboard::Escape) {
-                    // Putem pune pauză doar dacă ne jucăm (nu suntem în meniul principal)
                     if (!this->isMenu && !this->isGameOver) {
                         this->isPaused = !this->isPaused;
                     }
                 }
                 break;
-
-            // ==========================================
-            // 2. APĂSARE CLICK (MENIU, PAUZĂ SAU SLIDER)
-            // ==========================================
             case sf::Event::MouseButtonPressed:
                 if (this->isMenu) {
-                    // CODUL TĂU VECHI: Suntem în meniul principal
                     int buttonIndex = this->mainMenu->handleInput(this->event);
                     switch (buttonIndex) {
-                        case 0: // PLAY button
+                        case 0:
                             this->isMenu = false;
-                            this->resetGame();        // Start the gameplay
+                            this->resetGame();
                             this->backgroundMusic.play();
                             break;
-                        case 1: // SCOREBOARD button
+                        case 1:
                             this->mainMenu->showScoreboard(this->scoreboard->getHighScore());
                             break;
                         default:
                             break;
                     }
-                }
-                else if (this->isPaused) {
-                    // NOU: Suntem în meniul de pauză
+                } else if (this->isPaused) {
                     int action = this->mainMenu->handlePauseInput(this->event);
-                    if (action == 1) { // Butonul RESUME
+                    if (action == 1) {
                         this->isPaused = false;
-                    } else if (action == 2) { // Butonul MAIN MENU
+                    } else if (action == 2) {
                         this->isPaused = false;
                         this->isMenu = true;
                         this->backgroundMusic.stop();
                         this->resetGame();
-
                     }
-                }
-                else if (this->isGameOver) {
-                    // <--- NOU: LOGICA PENTRU DEATH SCREEN
+                } else if (this->isGameOver) {
                     int action = this->mainMenu->handleDeathInput(this->event);
-                    if (action == 1) { // Butonul MAIN MENU
+                    if (action == 1) {
                         this->isGameOver = false;
                         this->isMenu = true;
                         this->resetGame();
-                    } else if (action == 2) { // Butonul EXIT
-                        this->window->close(); // AICI închidem jocul de tot!
+                    } else if (action == 2) {
+                        this->window->close();
                     }
-                }
-                else {
-                    // NOU: Suntem în joc. Trimitem click-ul la Scoreboard pentru Slider-ul de volum
+                } else {
                     this->scoreboard->handleInput(this->event);
                 }
                 break;
-
-            // ==========================================
-            // 3. ELIBERARE CLICK (PENTRU SLIDER)
-            // ==========================================
             case sf::Event::MouseButtonReleased:
-                // Când luăm degetul de pe click, anunțăm slider-ul să se oprească din "drag"
                 if (!this->isMenu && !this->isPaused) {
                     this->scoreboard->handleInput(this->event);
                 }
                 break;
-
-            // ==========================================
-            // 4. MIȘCARE MOUSE (PENTRU SLIDER)
-            // ==========================================
             case sf::Event::MouseMoved:
-                // Trimitem coordonatele mouse-ului pentru ca slider-ul să se miște vizual stânga-dreapta
                 if (!this->isMenu && !this->isPaused) {
                     this->scoreboard->handleInput(this->event);
                 }
                 break;
-
             default:
                 break;
         }
     }
 }
 
-
 void Game::update(float deltaTime) {
     this->pollEvents();
     if (this->isMenu || this->isGameOver || this->isPaused) {
-        // Skip gameplay updates when in the menu
         return;
     }
-    if (this->isPaused) return;
 
     if (this->gameSpeedMultiplier < this->gameSpeedMultiplierMax) {
         this->gameSpeedMultiplier += 0.01f * deltaTime;
@@ -475,6 +392,7 @@ void Game::update(float deltaTime) {
     this->background->update(scaledDeltaTime);
     this->updateCoins(scaledDeltaTime);
     this->updateObstaclesAndItems(scaledDeltaTime);
+
     float currentVol = this->scoreboard->getVolume();
     this->backgroundMusic.setVolume(currentVol);
     this->missileSound.setVolume(currentVol);
@@ -482,11 +400,10 @@ void Game::update(float deltaTime) {
     this->alertSound.setVolume(currentVol);
     this->piggySound.setVolume(currentVol);
     this->laserSound.setVolume(currentVol);
+
     this->survivalTime += deltaTime;
-    this->scoreboard->update(coinScore, this->survivalTime); // Update the scoreboard with the player's speed
+    this->scoreboard->update(coinScore, this->survivalTime);
 
-
-    // Move player
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
         player->useJetpack(true);
     else
@@ -495,19 +412,17 @@ void Game::update(float deltaTime) {
     auto* missile = dynamic_cast<Missile*>(this->missile);
     auto* missileAlert = dynamic_cast<MissileAlert*>(this->missileAlert);
 
-    if(missileAlert->isAlerting()) {
-       missileAlert->update(scaledDeltaTime);
-       if(!missileAlert->isAlerting()) {
-           if (!missile->isLaunched()) { // Să nu se audă de 60 de ori pe secundă
-               this->missileSound.play();
-           }
-           missile->launch(missileAlert->getY());
-       }
-    }
-    else if(missile->isLaunched()) {
+    if (missileAlert->isAlerting()) {
+        missileAlert->update(scaledDeltaTime);
+        if (!missileAlert->isAlerting()) {
+            if (!missile->isLaunched()) {
+                this->missileSound.play();
+            }
+            missile->launch(missileAlert->getY());
+        }
+    } else if (missile->isLaunched()) {
         missile->update(scaledDeltaTime);
-    }
-    else {
+    } else {
         this->spawnTimer += scaledDeltaTime;
         if (this->spawnTimer >= this->spawnTimerMax) {
             missileAlert->alert();
@@ -518,31 +433,31 @@ void Game::update(float deltaTime) {
 
     if (Collision::checkCollision(player->getSprite(), missile->getSprite(), 0.6f, 0.8f, 0.5f, 0.5f)) {
         std::cout << "Collision detected! GAME OVER." << std::endl;
-        this->isGameOver=true; // Set endGame to true
-        this-> backgroundMusic.stop(); // Stop background music
-        this->mainMenu->setDeathScore(this->coinScore); // Update the death screen with the final score
+        this->isGameOver = true;
+        this->backgroundMusic.stop();
+        this->mainMenu->setDeathScore(this->coinScore);
         this->scoreboard->saveRecord();
     }
 }
-
-
 
 void Game::render() const {
     this->window->clear();
 
     if (this->isMenu) {
-        this->mainMenu->render(); // Render the main menu
+        this->mainMenu->render();
     } else {
         this->scoreboard->draw(*this->window);
         if (this->isPaused) {
             this->mainMenu->renderPause();
         } else if (this->isGameOver) {
-            this->mainMenu->renderDeath(); // <--- DESENĂM DEATH SCREEN-UL
+            this->mainMenu->renderDeath();
         }
+
         this->background->render(*this->window);
         this->player->render(*this->window);
         this->missileAlert->render(*this->window);
         this->missile->render(*this->window);
+
         for (auto* coin : this->coins) {
             coin->render(*this->window);
         }
@@ -552,11 +467,12 @@ void Game::render() const {
         for (auto* laser : this->lasers) {
             laser->render(*this->window);
         }
+
         this->scoreboard->draw(*this->window);
+
         if (this->isPaused) {
             this->mainMenu->renderPause();
-        }
-        else if(this->isGameOver) {
+        } else if (this->isGameOver) {
             this->mainMenu->renderDeath();
         }
     }
@@ -569,7 +485,6 @@ bool Game::running() const {
 }
 
 void Game::resetGame() {
-    // 1. Resetăm variabilele de scor și timp
     this->survivalTime = 0.f;
     this->coinScore = 0;
     this->spawnTimer = 0.f;
@@ -577,34 +492,28 @@ void Game::resetGame() {
     this->gameSpeedMultiplier = 1.f;
     this->scoreboard->reset();
 
-    // 2. Curățăm toate monedele de pe ecran
     for (auto* coin : this->coins) {
         delete coin;
     }
     this->coins.clear();
 
-    // Resetare PiggyBanks
     for (auto* pb : this->piggyBanks) {
         delete pb;
     }
     this->piggyBanks.clear();
     this->piggyTimer = 0.f;
 
-    // Resetare Lasere
     for (auto* laser : this->lasers) {
         delete laser;
     }
     this->lasers.clear();
     this->laserTimer = 0.f;
 
-    // 3. Recreăm Jucătorul și Rachetele de la zero
-    // Ștergem obiectele vechi din runda trecută
     delete this->player;
     delete this->missileAlert;
     delete this->missile;
 
-    // Le generăm din nou pe cele noi, la pozițiile de start
     this->initPlayer();
-    this->initMissileAlert(); // (Aici trimitem noul player creat)
+    this->initMissileAlert();
     this->initMissile();
 }

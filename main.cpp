@@ -5,15 +5,15 @@ int main()
     srand(static_cast<unsigned int>(time(NULL)));
 
     sf::Clock clock;
-    Game game;
+    Game& game = Game::getInstance();
 
     clock.restart();
 
-    while(game.running()) {
-
+    while (game.running()) {
         float deltaTime = clock.restart().asSeconds();
 
-        if (deltaTime > 1.0f / 30.0f) deltaTime = 1.0f / 30.0f;
+        if (deltaTime > 1.0f / 30.0f)
+            deltaTime = 1.0f / 30.0f;
 
         game.update(deltaTime);
         game.render();
